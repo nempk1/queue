@@ -27,8 +27,8 @@ typedef struct _queue_node queue_node_t;
  * and last node
  */
 typedef struct _queue_main {
-	struct _queue_node *first;
-	struct _queue_node *last;
+	queue_node_t *first;
+	queue_node_t *last;
 	pthread_mutex_t access_mutex;
 } queue_t;
 
@@ -46,10 +46,19 @@ extern int queue_init(queue_t **, int);
 /*
  * function used to clear/free 
  * all the nodes of the queue
+ * and its data
  *
  * returns: 0 if OK on error 1
  */
-extern int queue_clear(queue_t **);
+extern int queue_clear_all(queue_t **);
+
+/*
+ * function used to clear/free 
+ * all the nodes of the queue
+ *
+ * returns: 0 if OK on error 1
+ */
+extern int queue_clear_nodes(queue_t **);
 
 /*
  * this function will clear/free
@@ -102,5 +111,7 @@ extern int queue_enqueue_cpy(queue_t *, const void *, size_t);
  * returns: data if OK on error NULL
  */ 
 extern void * queue_dequeue_data(queue_t *);
+
+extern queue_node_t * queue_dequeue_node(queue_t *);
 
 #endif

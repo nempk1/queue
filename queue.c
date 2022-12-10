@@ -3,8 +3,11 @@
 
 int queue_init(queue_t **ref,int alloc)
 {
-	if(!alloc) 
+	if(alloc){ 
 		(*ref) = (queue_t *)malloc(sizeof(queue_t));
+		if((*ref) == NULL) 
+			return 1; 
+	}
 	(*ref)->first = NULL;
 	(*ref)->last = NULL;
 	
@@ -13,7 +16,7 @@ int queue_init(queue_t **ref,int alloc)
 	return result;
 }
 
-int queue_clear(queue_t **ref)
+int queue_clear_all(queue_t **ref)
 {
        	queue_node_t *traverse;
 	
@@ -21,6 +24,20 @@ int queue_clear(queue_t **ref)
 		traverse = (*ref)->first;
 		(*ref)->first = (*ref)->first->next;
 		free(traverse->data);
+		free(traverse);
+	}
+	
+	(*ref)->last = NULL;
+	return 0;
+}
+
+int queue_clear_nodes(queue_t **ref)
+{
+       	queue_node_t *traverse;
+	
+	while((*ref)->first != NULL) {
+		traverse = (*ref)->first;
+		(*ref)->first = (*ref)->first->next;
 		free(traverse);
 	}
 	
@@ -120,10 +137,24 @@ int queue_enqueue_cpy(queue_t *ref, const void *data_arg, size_t data_size)
 
 void * queue_dequeue_data(queue_t *ref)
 {
-	if(ref->first != NULL) {
-		queue_node_t *tmp = ref->first;
-		ref->first = ref->first->next;
-		return tmp->data;
-	} else
+	queue_node_t *tmp = queue_dequeue_node(ref);
+	if(tmp == NULL)
+		return tmp;
+	void *data_ref = tmp->data;
+	free(tmp);
+	return data_ref;
+}
+
+queue_node_t * queue_dequeue_node(queue_t *ref)
+{
+	pthread_mutex_lock(&ref->access_mutex);
+
+	if(ref->first == NULL)
 		return NULL;
+	
+	queue_node_t *tmp = ref->first;	
+	ref->first = ref->first->next;
+	
+	pthread_mutex_unlock(&ref->access_mutex);
+	return tmp;
 }
