@@ -1,173 +1,194 @@
 #include "queue.h"
 
-int queue_init(queue_t **ref,int alloc)
+int squeue_init(squeue **ref)
 {
-	if(alloc) { 
-		(*ref) = (queue_t *)malloc(sizeof(queue_t));
+
+	if((*ref) == NULL) { 
+		(*ref) = (squeue *)malloc(sizeof(squeue));
 		if((*ref) == NULL) 
 			return ENOMEM;
 	}
-	(*ref)->first = NULL;
-	(*ref)->last = NULL;
+	(*ref)->head = NULL;
+	(*ref)->tail = NULL;
 	
-	int result = pthread_mutex_init(&((*ref)->access_mutex), NULL);
-
-	return result;
+	return pthread_mutex_init(&((*ref)->mutex), NULL);
 }
 
-int queue_clear_all(queue_t **ref)
+int squeue_clear_all(squeue **ref)
 {
-       	queue_node_t *traverse;
-	
-	pthread_mutex_lock(&(*ref)->access_mutex);
-	while((*ref)->first != NULL) {
-		traverse = (*ref)->first;
-		(*ref)->first = (*ref)->first->next;
+       	squeue_node *traverse;
+
+	if((*ref) == NULL)
+		return 1;
+
+	pthread_mutex_lock(&(*ref)->mutex);
+	while((*ref)->head != NULL) {
+		traverse = (*ref)->head;
+		(*ref)->head = (*ref)->head->next;
 		free(traverse->data);
 		free(traverse);
 	}
-	(*ref)->last = NULL;
-	pthread_mutex_unlock(&(*ref)->access_mutex);
+	(*ref)->tail = NULL;
+	pthread_mutex_unlock(&(*ref)->mutex);
 
 	return 0;
 }
 
-int queue_clear_nodes(queue_t **ref)
+int squeue_clear_nodes(squeue **ref)
 {
+	squeue_node *traverse;
+
 	if((*ref) == NULL)
 		return 1;
 
-       	queue_node_t *traverse;
-	pthread_mutex_lock(&(*ref)->access_mutex);
-
-	while((*ref)->first != NULL) {
-		traverse = (*ref)->first;
-		(*ref)->first = (*ref)->first->next;
+       	pthread_mutex_lock(&(*ref)->mutex);
+	while((*ref)->head != NULL) {
+		traverse = (*ref)->head;
+		(*ref)->head = (*ref)->head->next;
 		free(traverse);
 	}
-	(*ref)->last = NULL;
-	pthread_mutex_unlock(&(*ref)->access_mutex);
+	(*ref)->tail = NULL;
+	pthread_mutex_unlock(&(*ref)->mutex);
+
 	return 0;
 }
 
-int queue_destroy(queue_t **ref)
+int squeue_destroy(squeue **ref)
 {
 	if((*ref) == NULL)
 		return 1;
 
-	pthread_mutex_lock(&(*ref)->access_mutex);
-	if((*ref)->first == NULL) {
-		pthread_mutex_unlock(&(*ref)->access_mutex);
-		pthread_mutex_destroy(&(*ref)->access_mutex);	
+	pthread_mutex_lock(&(*ref)->mutex);
+	if((*ref)->head == NULL) {
+		pthread_mutex_unlock(&(*ref)->mutex);
+		pthread_mutex_destroy(&(*ref)->mutex);	
 		free(*ref);
 		(*ref) = NULL;
 		return 0;
 	}
-	pthread_mutex_unlock(&(*ref)->access_mutex);
-	return 1;
+	pthread_mutex_unlock(&(*ref)->mutex);
+
+	return 0;
 }
 
-int queue_isempty(queue_t *ref)
+int squeue_isempty(squeue *ref)
 {
 	if(ref == NULL)
 		return 2;
 	
 	int result = 1;
 
-	pthread_mutex_lock(&ref->access_mutex);
+	pthread_mutex_lock(&ref->mutex);
 	
-	if(ref->first == NULL) 
+	if(ref->head == NULL) 
 		result = 0;
 	
-	pthread_mutex_unlock(&ref->access_mutex);
+	pthread_mutex_unlock(&ref->mutex);
 	return result;	
 }
 
-queue_node_t * queue_create_node(void *data_arg)
+squeue_node* squeue_create_node(void *value)
 {
-	queue_node_t *result = (queue_node_t*)malloc(sizeof(queue_node_t));
+	squeue_node *result = (squeue_node*)malloc(sizeof(squeue_node));
 	if(result == NULL)
 		return NULL;
 
 	result->next = NULL;
-	result->data = data_arg;
+	result->data = value;
 	return result;
 }
 
 
-int queue_enqueue_data(queue_t *ref, void *data_arg)
+int squeue_enqueue_data(squeue *ref, void *data_arg)
 {
-	queue_node_t *data_node = queue_create_node(data_arg);
+	if(ref == NULL)
+		return 1;
 
-	pthread_mutex_lock(&ref->access_mutex);
-	if(ref->first == NULL) { /* Check if queue is empty. */
-		ref->last = ref->first = data_node;
+	squeue_node *data_node = squeue_create_node(data_arg);
+	if(data_node == NULL)
+		return 2;
+		
+	pthread_mutex_lock(&ref->mutex);
+	if(ref->head == NULL) {
+		ref->tail = ref->head = data_node;
 	} else {
-		ref->last->next= data_node;
-		ref->last = data_node;
+		ref->tail->next= data_node;
+		ref->tail = data_node;
 	}
-	pthread_mutex_unlock(&ref->access_mutex);
+	pthread_mutex_unlock(&ref->mutex);
 	return 0;
 }
 
-int queue_enqueue_node(queue_t *ref, queue_node_t *node)
+int squeue_enqueue_node(squeue *ref, squeue_node *node)
 {
-	pthread_mutex_lock(&ref->access_mutex);
-	if(ref->first == NULL) { /* Check is queue is empty */
-		ref->last = ref->first = node;
+	if(ref == NULL)
+		return 1;
+
+	pthread_mutex_lock(&ref->mutex);
+	if(ref->head == NULL) { 
+		ref->tail = ref->head = node;
 	} else {
-		ref->last->next= node;
-		ref->last = node;
+		ref->tail->next= node;
+		ref->tail = node;
 	}
-	pthread_mutex_unlock(&ref->access_mutex);
+	pthread_mutex_unlock(&ref->mutex);
 	return 0;
 }
 
-int queue_enqueue_cpy(queue_t *ref, const void *data_arg, size_t data_size)
+int squeue_enqueue_cpy(squeue *ref, const void *data_arg, size_t data_size)
 {
 	void *data_cpy = (void*)(malloc(data_size));
-	memcpy(data_cpy, data_arg, data_size);
-	queue_node_t *data_node = queue_create_node(data_cpy);
+	if(data_cpy == NULL)
+		return ENOMEM;
 
-	pthread_mutex_lock(&ref->access_mutex);
-	if(ref->first == NULL) {
-		ref->last = ref->first = data_node;
-	} else {
-		ref->last->next= data_node;
-		ref->last = data_node;
+	memcpy(data_cpy, data_arg, data_size);
+	squeue_node *data_node = squeue_create_node(data_cpy);
+	if(data_node == NULL) {
+		free(data_cpy);
+		return 1;
 	}
-	pthread_mutex_unlock(&ref->access_mutex);
+
+	pthread_mutex_lock(&ref->mutex);
+	if(ref->head == NULL) {
+		ref->tail = ref->head = data_node;
+	} else {
+		ref->tail->next= data_node;
+		ref->tail = data_node;
+	}
+	pthread_mutex_unlock(&ref->mutex);
 	
 	return 0;
 }
 
-void * queue_dequeue_data(queue_t *ref)
+void* squeue_dequeue_data(squeue *ref)
 {
-	queue_node_t *tmp = queue_dequeue_node(ref);
-	if(tmp == NULL)
-		return tmp;
+	squeue_node *tmp; 
+
+	if(squeue_dequeue_node(ref, &tmp)) 
+		return NULL;		
+	
 	void *data_ref = tmp->data;
 	free(tmp);
 	return data_ref;
 }
 
-queue_node_t * queue_dequeue_node(queue_t *ref)
+int squeue_dequeue_node(squeue *ref, squeue_node **result)
 {
 	if(ref == NULL) {
-		return NULL;
+		return 1;
 	}
 
-	pthread_mutex_lock(&ref->access_mutex);
+	pthread_mutex_lock(&ref->mutex);
 
-	if(ref->first == NULL) {
-		pthread_mutex_unlock(&ref->access_mutex);
-		return NULL;
+	if(ref->head == NULL) {
+		pthread_mutex_unlock(&ref->mutex);
+		return 2;
 	}
 	
-	queue_node_t *tmp = ref->first;	
-	ref->first = ref->first->next;
+	squeue_node *tmp = ref->head;	
+	ref->head = ref->head->next;
 
-	pthread_mutex_unlock(&ref->access_mutex);
-
-	return tmp;
+	pthread_mutex_unlock(&ref->mutex);
+	*result = tmp;
+	return 0;
 }

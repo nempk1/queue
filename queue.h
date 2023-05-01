@@ -8,99 +8,105 @@
 #include<pthread.h>
 
 
-/*
- * Structure used to 
- * store the actual data
- * and the next in the queue.
- */
-typedef struct _queue_node {
-	struct _queue_node *next;
-	void *data;
-} queue_node_t;
+/* Node structure for squeue. */
+typedef struct _squeue_node {
+	struct 	_squeue_node *next;
+	void 	*data;
+} squeue_node;
+
+/* Strucutre definition of squeue */
+typedef struct squeue {
+	squeue_node 	*head;
+	squeue_node 	*tail;
+	pthread_mutex_t	mutex;
+} squeue; 
 
 /*
- * main queue structure where is
- * stored the access lock(mutex)
- * and the reference of the first
- * and last node.
- */
-typedef struct _queue_main {
-	queue_node_t *first;
-	queue_node_t *last;
-	pthread_mutex_t access_mutex;
-} queue_t;
-
-/*
- * function used to initialize 
- * the queue structure
+ * Function initialize the squeue struct
+ * if the parameter is NULL it will allocate
+ * memory for it.
  *
- * arg 1: queue reference
- * arg 2: integer to check if
- * 	  should allocate memory
- * 	  for the reference 
- * 	  1 for alloc.
- * 	  0 to init non alloc queue.
- * returns: 0 on success and EAGAIN | ENOMEM | EPERM on error.
+ * returns:	ON SUCCESS 0
+ * 		ON FAIL ENOMEM | EGAIN | EPERM
  */
-extern int queue_init(queue_t **, int);
+extern int
+squeue_init(squeue **);
 
 /*
- * function used to clear/free 
+ * Function used to clear/free 
  * all the nodes of the queue
  * and its data
  *
- * returns: 0 if OK on error 1
+ * returns: 	ON SUCCESS 0
+ * 		ON FAIL 1
  */
-extern int queue_clear_all(queue_t **);
+extern int
+squeue_clear_all(squeue **);
 
 /*
- * function used to clear/free 
- * all the nodes of the queue
- * but leave leaves the data intact
+ * Function used to free/clear all nodes
+ * from squeue reference leaving an empty
+ * queue after returns. 
  *
- * returns: 0 if OK on error 1
+ * returns:	ON SUCCESS 0
+ * 		ON FAIL 1
  */
-extern int queue_clear_nodes(queue_t **);
+extern int
+squeue_clear_nodes(squeue **);
 
 /*
- * this function will clear/free
- * all the nodes of the queue
- * and also destroy the access lock
- * and after will clear free the queue
+ * Function used to clear the mutex lock and after 
+ * will set squeue to NULL, so functions will see
+ * and treat as an unitialized squeue. You should
+ * clear the squeue ref before destroying it.
  *
- * returns: 0 if OK on error 1
+ * returns: 	ON SUCCESS 0
+ * 		ON FAIL 1
  */
-extern int queue_destroy(queue_t **);
+extern int
+squeue_destroy(squeue **);
 
 /*
- * check if queue is empty.
+ * Check if squeue is empty.
  *
- * returns: 
- * 	0 if empty.
- * 	1 not empty.
- * 	2 invalid queue. 
+ * returns:	ON FALSE 0
+ * 		ON TRUE 1 
  */
-extern int queue_isempty(queue_t *);
+extern int
+squeue_isempty(squeue *);
 
 /*
  * Function used to create a new node
- * with the data reference stored.
+ * with the data reference stored in it.
+ * 
+ * return: 	Node pointer allocated in heap that 
+ * 		needs to be freed by clear function or
+ * 		manual free after dequeue node.
+ *
+ * 		NULL on fail
  */  
-extern queue_node_t * queue_create_node(void *data);
+extern squeue_node *
+squeue_create_node(void *);
 
 /*
- * function will create an node
- * with the data and insert on the 
- * queue referenced by queue_t *.
+ * Function will create a node in heap
+ * with the data reference inside
+ * and enqueue.
+ * 
+ * return:	ON SUCCESS 0
+ * 		ON ERROR 1
+ *  
  */
-extern int queue_enqueue_data(queue_t *, void *);
+extern int
+squeue_enqueue_data(squeue *, void *);
 
 /*
  * this function will insert an
  * already created node on to the
- * queue referenced by queue_t *.
+ * queue referenced by squeue *.
  */
-extern int queue_enqueue_node(queue_t *, queue_node_t *);
+extern int
+squeue_enqueue_node(squeue *, squeue_node *);
 
 /*
  * this function will create and allocate 
@@ -109,7 +115,8 @@ extern int queue_enqueue_node(queue_t *, queue_node_t *);
  *
  * you will need to free the data later
  */
-extern int queue_enqueue_cpy(queue_t *, const void *, size_t);
+extern int
+squeue_enqueue_cpy(squeue *, const void *, size_t);
 
 /*
  * function used to get the data from
@@ -117,17 +124,19 @@ extern int queue_enqueue_cpy(queue_t *, const void *, size_t);
  *
  * returns: data if OK, NULL if empty
  */ 
-extern void * queue_dequeue_data(queue_t *);
+extern void *
+squeue_dequeue_data(squeue *);
 
 /*
- * function used to get node from
+ * Function used to get node from
  * the queue.
  *
- * returns: 
- * 	node pointer if OK, 
- * 	NULL on invalid or empty queue.
+ * returns:	ON SUCCESS 0 
+ * 		ON FAIL 1 | 2 in case
+ * 		of invalid queue ref
+ * 		or empty queue respectively
  */
-extern queue_node_t * queue_dequeue_node(queue_t *);
+extern int
+squeue_dequeue_node(squeue *, squeue_node **);
 
 #endif /*_THREAD_SAFE_QUEUE_*/
-
