@@ -1,10 +1,10 @@
 #include "queue.h"
 
-int squeue_init(squeue **ref)
+int squeue_init(struct squeue **ref)
 {
 
 	if((*ref) == NULL) { 
-		(*ref) = (squeue *)malloc(sizeof(squeue));
+		(*ref) = malloc(sizeof(struct squeue));
 		if((*ref) == NULL) 
 			return ENOMEM;
 	}
@@ -14,9 +14,9 @@ int squeue_init(squeue **ref)
 	return pthread_mutex_init(&((*ref)->mutex), NULL);
 }
 
-int squeue_clear_all(squeue **ref)
+int squeue_clear_all(struct squeue **ref)
 {
-       	squeue_node *traverse;
+       	struct sq_node *traverse;
 
 	if((*ref) == NULL)
 		return 1;
@@ -34,9 +34,9 @@ int squeue_clear_all(squeue **ref)
 	return 0;
 }
 
-int squeue_clear_nodes(squeue **ref)
+int squeue_clear_nodes(struct squeue **ref)
 {
-	squeue_node *traverse;
+	struct sq_node *traverse;
 
 	if((*ref) == NULL)
 		return 1;
@@ -53,7 +53,7 @@ int squeue_clear_nodes(squeue **ref)
 	return 0;
 }
 
-int squeue_destroy(squeue **ref)
+int squeue_destroy(struct squeue **ref)
 {
 	if((*ref) == NULL)
 		return 1;
@@ -71,7 +71,7 @@ int squeue_destroy(squeue **ref)
 	return 0;
 }
 
-int squeue_isempty(squeue *ref)
+int squeue_isempty(struct squeue *ref)
 {
 	if(ref == NULL)
 		return 2;
@@ -87,9 +87,9 @@ int squeue_isempty(squeue *ref)
 	return result;	
 }
 
-squeue_node* squeue_create_node(void *value)
+struct sq_node* squeue_create_node(void *value)
 {
-	squeue_node *result = (squeue_node*)malloc(sizeof(squeue_node));
+	struct sq_node *result = malloc(sizeof(struct sq_node));
 	if(result == NULL)
 		return NULL;
 
@@ -99,12 +99,12 @@ squeue_node* squeue_create_node(void *value)
 }
 
 
-int squeue_enqueue_data(squeue *ref, void *data_arg)
+int squeue_enqueue_data(struct squeue *ref, void *data_arg)
 {
 	if(ref == NULL)
 		return 1;
 
-	squeue_node *data_node = squeue_create_node(data_arg);
+	struct sq_node *data_node = squeue_create_node(data_arg);
 	if(data_node == NULL)
 		return 2;
 		
@@ -119,7 +119,7 @@ int squeue_enqueue_data(squeue *ref, void *data_arg)
 	return 0;
 }
 
-int squeue_enqueue_node(squeue *ref, squeue_node *node)
+int squeue_enqueue_node(struct squeue *ref, struct sq_node *node)
 {
 	if(ref == NULL)
 		return 1;
@@ -135,14 +135,14 @@ int squeue_enqueue_node(squeue *ref, squeue_node *node)
 	return 0;
 }
 
-int squeue_enqueue_cpy(squeue *ref, const void *data_arg, size_t data_size)
+int squeue_enqueue_cpy(struct squeue *ref, const void *data_arg, size_t data_size)
 {
-	void *data_cpy = (void*)(malloc(data_size));
+	void *data_cpy = malloc(data_size);
 	if(data_cpy == NULL)
 		return ENOMEM;
 
 	memcpy(data_cpy, data_arg, data_size);
-	squeue_node *data_node = squeue_create_node(data_cpy);
+	struct sq_node *data_node = squeue_create_node(data_cpy);
 	if(data_node == NULL) {
 		free(data_cpy);
 		return 1;
@@ -160,9 +160,9 @@ int squeue_enqueue_cpy(squeue *ref, const void *data_arg, size_t data_size)
 	return 0;
 }
 
-void* squeue_dequeue_data(squeue *ref)
+void* squeue_dequeue_data(struct squeue *ref)
 {
-	squeue_node *tmp; 
+	struct sq_node *tmp; 
 
 	if(squeue_dequeue_node(ref, &tmp)) 
 		return NULL;		
@@ -172,7 +172,7 @@ void* squeue_dequeue_data(squeue *ref)
 	return data_ref;
 }
 
-int squeue_dequeue_node(squeue *ref, squeue_node **result)
+int squeue_dequeue_node(struct squeue *ref, struct sq_node **result)
 {
 	if(ref == NULL) {
 		return 1;
@@ -185,7 +185,7 @@ int squeue_dequeue_node(squeue *ref, squeue_node **result)
 		return 2;
 	}
 	
-	squeue_node *tmp = ref->head;	
+	struct sq_node *tmp = ref->head;	
 	ref->head = ref->head->next;
 
 	pthread_mutex_unlock(&ref->mutex);

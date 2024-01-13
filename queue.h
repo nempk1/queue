@@ -1,5 +1,5 @@
-#ifndef _THREAD_SAFE_QUEUE_
-#define _THREAD_SAFE_QUEUE_
+#ifndef THREAD_SAFE_QUEUE
+#define THREAD_SAFE_QUEUE
 
 #include<stdint.h>
 #include<stdlib.h>
@@ -9,17 +9,17 @@
 
 
 /* Node structure for squeue. */
-typedef struct _squeue_node {
-	struct 	_squeue_node *next;
-	void 	*data;
-} squeue_node;
+struct sq_node {
+	struct sq_node 	*next;
+	void 		*data;
+};
 
 /* Strucutre definition of squeue */
-typedef struct squeue {
-	squeue_node 	*head;
-	squeue_node 	*tail;
-	pthread_mutex_t	mutex;
-} squeue; 
+struct squeue {
+	struct sq_node 	*head;
+	struct sq_node 	*tail;
+	pthread_mutex_t	 mutex;
+}; 
 
 /*
  * Function initialize the squeue struct
@@ -30,7 +30,7 @@ typedef struct squeue {
  * 		ON FAIL ENOMEM | EGAIN | EPERM
  */
 extern int
-squeue_init(squeue **);
+squeue_init(struct squeue **);
 
 /*
  * Function used to clear/free 
@@ -41,7 +41,7 @@ squeue_init(squeue **);
  * 		ON FAIL 1
  */
 extern int
-squeue_clear_all(squeue **);
+squeue_clear_all(struct squeue **);
 
 /*
  * Function used to free/clear all nodes
@@ -52,7 +52,7 @@ squeue_clear_all(squeue **);
  * 		ON FAIL 1
  */
 extern int
-squeue_clear_nodes(squeue **);
+squeue_clear_nodes(struct squeue **);
 
 /*
  * Function used to clear the mutex lock and after 
@@ -64,7 +64,7 @@ squeue_clear_nodes(squeue **);
  * 		ON FAIL 1
  */
 extern int
-squeue_destroy(squeue **);
+squeue_destroy(struct squeue **);
 
 /*
  * Check if squeue is empty.
@@ -73,7 +73,7 @@ squeue_destroy(squeue **);
  * 		ON TRUE 1 
  */
 extern int
-squeue_isempty(squeue *);
+squeue_isempty(struct squeue *);
 
 /*
  * Function used to create a new node
@@ -85,7 +85,7 @@ squeue_isempty(squeue *);
  *
  * 		NULL on fail
  */  
-extern squeue_node *
+extern struct sq_node *
 squeue_create_node(void *);
 
 /*
@@ -98,7 +98,7 @@ squeue_create_node(void *);
  *  
  */
 extern int
-squeue_enqueue_data(squeue *, void *);
+squeue_enqueue_data(struct squeue *, void *);
 
 /*
  * this function will insert an
@@ -106,7 +106,7 @@ squeue_enqueue_data(squeue *, void *);
  * queue referenced by squeue *.
  */
 extern int
-squeue_enqueue_node(squeue *, squeue_node *);
+squeue_enqueue_node(struct squeue *, struct sq_node *);
 
 /*
  * this function will create and allocate 
@@ -116,7 +116,7 @@ squeue_enqueue_node(squeue *, squeue_node *);
  * you will need to free the data later
  */
 extern int
-squeue_enqueue_cpy(squeue *, const void *, size_t);
+squeue_enqueue_cpy(struct squeue *, const void *, size_t);
 
 /*
  * function used to get the data from
@@ -125,7 +125,7 @@ squeue_enqueue_cpy(squeue *, const void *, size_t);
  * returns: data if OK, NULL if empty
  */ 
 extern void *
-squeue_dequeue_data(squeue *);
+squeue_dequeue_data(struct squeue *);
 
 /*
  * Function used to get node from
@@ -137,6 +137,6 @@ squeue_dequeue_data(squeue *);
  * 		or empty queue respectively
  */
 extern int
-squeue_dequeue_node(squeue *, squeue_node **);
+squeue_dequeue_node(struct squeue *, struct sq_node **);
 
-#endif /*_THREAD_SAFE_QUEUE_*/
+#endif /*THREAD_SAFE_QUEUE*/
