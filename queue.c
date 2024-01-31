@@ -101,10 +101,12 @@ struct sq_node* squeue_create_node(void *value)
 
 int squeue_enqueue_data(struct squeue *ref, void *data_arg)
 {
-	struct sq_node *data_node = squeue_create_node(data_arg);
+	struct sq_node *data_node;
         
 	if(ref == NULL)
 		return 1;
+	
+	data_node = squeue_create_node(data_arg);
 
 	if(data_node == NULL)
 		return 2;
