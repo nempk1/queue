@@ -1,12 +1,13 @@
 #include "list.h"
 
-static int nb_dlist_remove(dlist_t *list, dlnode_t *node, void **data)
+int nb_dlist_remove(dlist_t *list, dlnode_t *node, void **data)
 {
 	if (!node && list->size != 0)
 		return -1;
 
 	if(*data)
 		*data = node->data;
+
 	if (node == list->head) {
 		list->head = node->next;		
 		if (!list->head) 
@@ -150,9 +151,10 @@ int dlist_remove(dlist_t *list, dlnode_t *node, void **data)
 		else
 			node->next->prev = node->prev;
 	}
-	pthread_mutex_unlock(&list->lock);
-	free(node);
 	list->size--;
 
+
+	pthread_mutex_unlock(&list->lock);
+	free(node);
 	return 0;
 }
