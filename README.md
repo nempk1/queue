@@ -1,7 +1,7 @@
 # THREAD-SAFE QUEUE
 
 ## Description
-Simple generic thread-safe queue in C, implemented with Linked List.
+Simple generic thread-safe queue and list in C.
 
 ### Dependencies
 * POSIX compliant system.
